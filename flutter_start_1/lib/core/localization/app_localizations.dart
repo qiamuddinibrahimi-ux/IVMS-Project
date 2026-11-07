@@ -21,6 +21,17 @@ class AppLocalizations {
   // --- Translations Map ---
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
+
+
+      'manage_items': 'Manage products & stock',
+'general_setup_subtitle': 'Configure the basic system information',
+'people_business_subtitle': 'Manage customers and suppliers',
+'purchases_subtitle': 'Manage incoming goods and purchase records',
+'sales_subtitle': 'Manage sales and transaction details',
+'payments_subtitle': 'Manage money received and paid',
+'inventory_subtitle': 'Monitor quantities, movements and adjustments',
+'reports_subtitle': 'Review business activity and performance',
+
       // --- THEME / APPEARANCE ---
 'appearance': 'Appearance',
 'theme_mode': 'Theme Mode',
@@ -845,7 +856,17 @@ class AppLocalizations {
       'tap_add_currency': 'Tap + to add your first currency.',
     },
     'ps': {
-      'appearance': 'بڼه',
+
+      'manage_items': 'د توکو او موجودي مدیریت',
+'general_setup_subtitle': 'د سیسټم بنسټیز معلومات تنظیم کړئ',
+'people_business_subtitle': 'پیرودونکي او عرضه کوونکي مدیریت کړئ',
+'purchases_subtitle': 'داخلیدونکي توکي او پیرودنې مدیریت کړئ',
+'sales_subtitle': 'پلور او د معاملو توضیحات مدیریت کړئ',
+'payments_subtitle': 'ترلاسه شوې او ورکړل شوې پیسې مدیریت کړئ',
+'inventory_subtitle': 'مقدارونه، خوځښتونه او تنظیمات وڅارئ',
+'reports_subtitle': 'سوداګریز فعالیت او فعالیت وڅارئ',
+
+
 'theme_mode': 'د بڼې حالت',
 'theme_light': 'روښانه',
 'theme_dark': 'تیاره',
@@ -1658,6 +1679,16 @@ class AppLocalizations {
       'tap_add_currency': 'د خپل لومړي اسعارو اضافه کولو لپاره + ټایپ کړئ.',
     },
     'fa': {
+
+      'manage_items': 'مدیریت کالاها و موجودی',
+'general_setup_subtitle': 'اطلاعات پایه سیستم را تنظیم کنید',
+'people_business_subtitle': 'مشتریان و فروشندگان را مدیریت کنید',
+'purchases_subtitle': 'کالاهای ورودی و خریدها را مدیریت کنید',
+'sales_subtitle': 'فروش و جزئیات معاملات را مدیریت کنید',
+'payments_subtitle': 'پول دریافت شده و پرداخت شده را مدیریت کنید',
+'inventory_subtitle': 'مقادیر، حرکات و تنظیمات را نظارت کنید',
+'reports_subtitle': 'فعالیت تجاری و عملکرد را بررسی کنید',
+
       'appearance': 'ظاهر',
 'theme_mode': 'حالت ظاهری',
 'theme_light': 'روشن',

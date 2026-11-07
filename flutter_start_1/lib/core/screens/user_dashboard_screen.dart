@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_start_1/core/screens/item_screen.dart';
 import 'package:provider/provider.dart';
 import '../localization/app_localizations.dart'; 
 import 'settings_screen.dart';
@@ -382,11 +383,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   // ============================================================
   // RESPONSIVE BREAKPOINTS
   // ============================================================
-  // compact  < 340   (very small phones like 320px screens)
-  // small    340-360
-  // normal   361-599
-  // tablet   600-899
-  // desktop  >= 900
   bool _isCompact(double w) => w < 340;
   bool _isSmall(double w) => w < 360;
   bool _isTablet(double w) => w >= 600 && w < 900;
@@ -395,14 +391,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   int _gridColumns(double w) {
     if (_isDesktop(w)) return 4;
     if (_isTablet(w)) return 3;
-    if (_isCompact(w)) return 2; // keep 2 columns even on very small
+    if (_isCompact(w)) return 2;
     return 2;
   }
 
   double _gridAspectRatio(double w) {
     if (_isDesktop(w)) return 1.25;
     if (_isTablet(w)) return 1.18;
-    if (_isCompact(w)) return 0.95; // taller cards on tiny phones so text fits
+    if (_isCompact(w)) return 0.95;
     return 1.12;
   }
 
@@ -435,7 +431,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
 
     final carouselItems = _getCarouselItems(loc);
 
-    // ✅ Responsive size breakpoints
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final isCompact = _isCompact(width);
@@ -443,18 +438,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     final isTablet = _isTablet(width);
     final isDesktop = _isDesktop(width);
 
-    // Header sizing
     final avatarSize = isDesktop ? 76.0 : isTablet ? 72.0 : isCompact ? 54.0 : 64.0;
     final appBarHeight = isDesktop ? 108.0 : isTablet ? 104.0 : isCompact ? 80.0 : 92.0;
     final horizontalPad = isDesktop ? 28.0 : isTablet ? 24.0 : isCompact ? 12.0 : 18.0;
     final iconSize = isCompact ? 22.0 : 24.0;
 
-    // Name column typography
     final nameSize = isDesktop ? 19.0 : isTablet ? 18.0 : isCompact ? 14.0 : 17.0;
     final emailSize = isCompact ? 10.5 : 12.0;
     final subtitleSize = isCompact ? 9.0 : 10.0;
 
-    // Section + grid
     final columns = _gridColumns(width);
     final aspectRatio = _gridAspectRatio(width);
     final carouselHeight = _carouselHeight(width);
@@ -478,7 +470,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
               ),
               child: Row(
                 children: [
-                  // AVATAR (tappable → profile)
+                  // AVATAR
                   InkWell(
                     onTap: () => _openProfile(context),
                     borderRadius: BorderRadius.circular(avatarSize),
@@ -536,7 +528,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                   ),
                   SizedBox(width: isCompact ? 8 : 14),
 
-                  // NAME / EMAIL COLUMN (tappable → profile)
+                  // NAME / EMAIL
                   Expanded(
                     child: InkWell(
                       onTap: () => _openProfile(context),
@@ -573,7 +565,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                                 fontSize: emailSize,
                               ),
                             ),
-                            // Hide the app brand on very small phones to save height
                             if (!isCompact) ...[
                               SizedBox(height: isSmall ? 2 : 3),
                               Text(
@@ -594,9 +585,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                   ),
 
                   SizedBox(width: isCompact ? 2 : 8),
-
-                  // SETTINGS ICON
-                 
 
                   // NOTIFICATIONS ICON
                   IconButton(
@@ -638,7 +626,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       ],
                     ),
                   ),
-                   IconButton(
+                  
+                  // SETTINGS ICON
+                  IconButton(
                     visualDensity: isCompact
                         ? VisualDensity.compact
                         : VisualDensity.standard,
@@ -670,7 +660,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─────────────────────────────────────────────
-              // CAROUSEL (height scales)
+              // CAROUSEL
               // ─────────────────────────────────────────────
               SizedBox(
                 height: carouselHeight,
@@ -747,10 +737,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                 ),
                 child: Column(
                   children: [
+                    // ✅ GENERAL SETUP
                     _buildSection(
                       theme: theme,
                       title: loc.getString('general_setup') ?? 'General Setup',
-                      subtitle:
+                      subtitle: loc.getString('general_setup_subtitle') ??
                           'Configure the basic system information',
                       icon: Icons.settings_suggest_outlined,
                       color: const Color(0xFF3F51B5),
@@ -790,13 +781,22 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                           onTap: () => _openScreen(
                               context, const ExchangeRateScreen()),
                         ),
+                        _DashboardItem(
+                          title: loc.getString('items') ?? 'Items',
+                          subtitle: loc.getString('manage_items') ?? 'Manage products & stock',
+                          icon: Icons.inventory_2_outlined,
+                          color: const Color(0xFF1E88E5),
+                          onTap: () => _openScreen(context, const ItemScreen()),
+                        ),
                       ],
                     ),
 
+                    // ✅ PEOPLE & BUSINESSES
                     _buildSection(
                       theme: theme,
                       title: loc.getString('people_business') ?? 'People & Businesses',
-                      subtitle: 'Manage customers and suppliers',
+                      subtitle: loc.getString('people_business_subtitle') ??
+                          'Manage customers and suppliers',
                       icon: Icons.groups_outlined,
                       color: const Color(0xFF00838F),
                       columns: columns,
@@ -822,10 +822,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       ],
                     ),
 
+                    // ✅ PURCHASES
                     _buildSection(
                       theme: theme,
                       title: loc.getString('purchases') ?? 'Purchases',
-                      subtitle:
+                      subtitle: loc.getString('purchases_subtitle') ??
                           'Manage incoming goods and purchase records',
                       icon: Icons.shopping_bag_outlined,
                       color: const Color(0xFF6D4C41),
@@ -851,10 +852,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       ],
                     ),
 
+                    // ✅ SALES
                     _buildSection(
                       theme: theme,
                       title: loc.getString('sales') ?? 'Sales',
-                      subtitle: 'Manage sales and transaction details',
+                      subtitle: loc.getString('sales_subtitle') ??
+                          'Manage sales and transaction details',
                       icon: Icons.point_of_sale_rounded,
                       color: const Color(0xFFC62828),
                       columns: columns,
@@ -889,10 +892,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       ],
                     ),
 
+                    // ✅ PAYMENTS
                     _buildSection(
                       theme: theme,
                       title: loc.getString('payments') ?? 'Payments',
-                      subtitle: 'Manage money received and paid',
+                      subtitle: loc.getString('payments_subtitle') ??
+                          'Manage money received and paid',
                       icon: Icons.payments_outlined,
                       color: const Color(0xFF2E7D32),
                       columns: columns,
@@ -922,10 +927,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       ],
                     ),
 
+                    // ✅ INVENTORY
                     _buildSection(
                       theme: theme,
                       title: loc.getString('inventory') ?? 'Inventory & Stock',
-                      subtitle:
+                      subtitle: loc.getString('inventory_subtitle') ??
                           'Monitor quantities, movements and adjustments',
                       icon: Icons.warehouse_outlined,
                       color: const Color(0xFF1565C0),
@@ -993,10 +999,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                       ],
                     ),
 
+                    // ✅ REPORTS
                     _buildSection(
                       theme: theme,
                       title: loc.getString('reports') ?? 'Reports & Analytics',
-                      subtitle:
+                      subtitle: loc.getString('reports_subtitle') ??
                           'Review business activity and performance',
                       icon: Icons.insights_rounded,
                       color: const Color(0xFF102C4A),
@@ -1040,7 +1047,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   }
 
   // ============================================================
-  // CAROUSEL CARD (compact-aware)
+  // CAROUSEL CARD
   // ============================================================
   Widget _buildCarouselCard({
     required ThemeData theme,
@@ -1171,7 +1178,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
   }
 
   // ============================================================
-  // SECTION BUILDER (responsive)
+  // SECTION BUILDER
   // ============================================================
   Widget _buildSection({
     required ThemeData theme,

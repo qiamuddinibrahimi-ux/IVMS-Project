@@ -24,6 +24,7 @@ class StockMovementCard extends StatelessWidget {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
     final isIn = movement.isStockIn;
     final color = isIn ? Colors.green : Colors.red;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     return Card(
       color: theme.cardColor,
@@ -35,73 +36,130 @@ class StockMovementCard extends StatelessWidget {
         horizontal: 12,
         vertical: 6,
       ),
-      child: ListTile(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(
-            isIn ? Icons.south_west : Icons.north_east,
-            color: color,
-          ),
-        ),
-        title: Text(
-          movement.itemName.isEmpty
-              ? (loc.getString('item_num') ?? 'Item #{id}')
-                  .replaceAll('{id}', '${movement.itemId}')
-              : movement.itemName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        subtitle: Text(
-          '${movement.movementType} • '
-          '${movement.sourceType}\n'
-          '${loc.getString('id') ?? 'ID'}: ${movement.movementId}',
-          style: TextStyle(color: theme.hintColor),
-        ),
-        isThreeLine: true,
-        trailing: SizedBox(
-          width: 100,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
             children: [
-              Text(
-                movement.quantity.toString(),
-                style: TextStyle(
+              // ============================================
+              // LEADING ICON
+              // ============================================
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withValues(alpha: 0.12),
+                child: Icon(
+                  isIn ? Icons.south_west : Icons.north_east,
                   color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  size: 22,
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (onEdit != null)
-                    IconButton(
-                      tooltip: loc.getString('edit') ?? 'Edit',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: onEdit,
-                      icon: Icon(
-                        Icons.edit_outlined,
-                        size: 18,
+              const SizedBox(width: 12),
+
+              // ============================================
+              // TITLE + SUBTITLE
+              // ============================================
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      movement.itemName.isEmpty
+                          ? (loc.getString('item_num') ?? 'Item #{id}')
+                              .replaceAll('{id}', '${movement.itemId}')
+                          : movement.itemName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${movement.movementType} • ${movement.sourceType}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
                         color: theme.hintColor,
                       ),
                     ),
-                  if (onDelete != null)
-                    IconButton(
-                      tooltip: loc.getString('delete') ?? 'Delete',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: onDelete,
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: Colors.red,
+                    const SizedBox(height: 2),
+                    Text(
+                      '${loc.getString('id') ?? 'ID'}: ${movement.movementId}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.hintColor,
                       ),
                     ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // ============================================
+              // TRAILING: QUANTITY + ACTIONS
+              // ============================================
+              Column(
+                crossAxisAlignment: isRtl
+                    ? CrossAxisAlignment.start
+                    : CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    movement.quantity.toString(),
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onEdit != null)
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: IconButton(
+                            tooltip: loc.getString('edit') ?? 'Edit',
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            onPressed: onEdit,
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: theme.hintColor,
+                            ),
+                          ),
+                        ),
+                      if (onDelete != null)
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: IconButton(
+                            tooltip: loc.getString('delete') ?? 'Delete',
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            onPressed: onDelete,
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],

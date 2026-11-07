@@ -5,8 +5,8 @@ import '../models/item_model.dart';
 import '../models/sale_model.dart';
 import '../models/sales_detail_model.dart';
 import '../providers/sales_detail_provider.dart';
-import '../localization/app_localizations.dart'; // ADDED
-import '../screens/qiamuddin_design.dart'; // ADDED
+import '../localization/app_localizations.dart';
+import '../screens/qiamuddin_design.dart';
 
 class SalesDetailsScreen extends StatefulWidget {
   final String token;
@@ -68,6 +68,24 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
     final quantity = double.tryParse(_quantityController.text) ?? 0;
     final price = double.tryParse(_unitPriceController.text) ?? 0;
     return quantity * price;
+  }
+
+  /// ✅ Format a sale for display in the dropdown:
+  ///    "INV-001 • Customer Name • 2025-11-01"
+  String _saleDropdownLabel(SaleModel sale) {
+    final invoice = sale.invoiceNo.trim().isNotEmpty
+        ? sale.invoiceNo.trim()
+        : 'Sale #${sale.saleId}';
+
+    final customer = sale.customerName.trim().isNotEmpty
+        ? sale.customerName.trim()
+        : 'Unknown customer';
+
+    final date = sale.saleDate.length >= 10
+        ? sale.saleDate.substring(0, 10)
+        : sale.saleDate;
+
+    return '$invoice • $customer • $date';
   }
 
   Future<void> _saveDetail() async {
@@ -140,7 +158,6 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
     final loc =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
-    // ✅ QIAMUDDIN DELETE DIALOG
     final confirmed = await QiamuddinDesign.deleteConfirmationDialog(
       context: context,
       title: loc.getString('delete_sales_detail') ?? 'Delete Sales Detail',
@@ -334,6 +351,7 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
               ),
               const SizedBox(height: 18),
 
+              // ✅ SALE DROPDOWN — shows invoice • customer • date
               DropdownButtonFormField<int>(
                 value: _selectedSaleId,
                 isExpanded: true,
@@ -349,9 +367,13 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
                   return DropdownMenuItem<int>(
                     value: sale.saleId,
                     child: Text(
-                      (loc.getString('sale_num') ?? 'Sale #{id}')
-                          .replaceAll('{id}', '${sale.saleId}'),
-                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      _saleDropdownLabel(sale),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 13,
+                      ),
                     ),
                   );
                 }).toList(),
@@ -474,7 +496,6 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
               ),
               const SizedBox(height: 18),
 
-              // ✅ QIAMUDDIN PRIMARY BUTTON
               QiamuddinDesign.primaryButton(
                 context: context,
                 text: provider.isSaving
@@ -528,6 +549,19 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
     final loc =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
+    // ✅ Lookup the sale for this detail to show real info
+    final sale = widget.sales
+        .where((s) => s.saleId == detail.saleId)
+        .firstOrNull;
+
+    final invoice = sale?.invoiceNo.trim().isNotEmpty == true
+        ? sale!.invoiceNo
+        : 'Sale #${detail.saleId}';
+
+    final customer = sale?.customerName.trim().isNotEmpty == true
+        ? sale!.customerName
+        : '';
+
     return Card(
       color: theme.cardColor,
       elevation: 1,
@@ -575,12 +609,13 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
+                      // ✅ Show real sale info (invoice + customer)
                       Text(
-                        (loc.getString('detail_num_sale_num') ??
-                                'Detail #{detail} • Sale #{sale}')
-                            .replaceAll(
-                                '{detail}', '${detail.saleDetailId}')
-                            .replaceAll('{sale}', '${detail.saleId}'),
+                        customer.isEmpty
+                            ? '$invoice • Detail #${detail.saleDetailId}'
+                            : '$invoice • $customer • Detail #${detail.saleDetailId}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: theme.hintColor,
                           fontSize: 12,

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/currency_model.dart';
 import '../providers/currency_provider.dart';
-import '../localization/app_localizations.dart'; // ADDED
+import '../localization/app_localizations.dart';
 import 'currency_form_screen.dart';
 
 class CurrencyScreen extends StatefulWidget {
@@ -42,29 +42,73 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
       final name = currency.currencyName.toLowerCase();
       final code = currency.currencyCode.toLowerCase();
       final symbol = currency.symbol.toLowerCase();
-      return name.contains(_searchText) || code.contains(_searchText) || symbol.contains(_searchText);
+      return name.contains(_searchText) ||
+          code.contains(_searchText) ||
+          symbol.contains(_searchText);
     }).toList();
   }
 
+  // ======================================================
+  // ✅ FIX: RELOAD AFTER ADD
+  // ======================================================
   Future<void> _openAddCurrency() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencyFormScreen()));
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const CurrencyFormScreen()),
+    );
+
+    if (!mounted) return;
+
+    // Always reload after returning from the form.
+    // (The form's success/failure is decided inside the form itself,
+    //  but we want to reflect the change either way.)
+    if (result == true) {
+      await context.read<CurrencyProvider>().loadCurrencies();
+    } else {
+      // fallback: also reload in case the form saved but didn't return true
+      await context.read<CurrencyProvider>().loadCurrencies();
+    }
   }
 
+  // ======================================================
+  // ✅ FIX: RELOAD AFTER EDIT
+  // ======================================================
   Future<void> _openEditCurrency(CurrencyModel currency) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => CurrencyFormScreen(currency: currency)));
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CurrencyFormScreen(currency: currency),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      await context.read<CurrencyProvider>().loadCurrencies();
+    } else {
+      await context.read<CurrencyProvider>().loadCurrencies();
+    }
   }
 
+  // ======================================================
+  // DELETE (already correct — kept)
+  // ======================================================
   Future<void> _deleteCurrency(CurrencyModel currency) async {
     final theme = Theme.of(context);
-    final loc = AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
+    final loc =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: theme.cardColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(loc.getString('delete_currency') ?? "Delete Currency", style: TextStyle(color: theme.colorScheme.onSurface)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            loc.getString('delete_currency') ?? "Delete Currency",
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
           content: Text(
             '${loc.getString('delete_currency_confirm') ?? "Are you sure you want to delete"} "${currency.currencyName}"?',
             style: TextStyle(color: theme.hintColor),
@@ -72,10 +116,17 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(loc.getString('cancel') ?? "Cancel", style: TextStyle(color: theme.hintColor)),
+              child: Text(
+                loc.getString('cancel') ?? "Cancel",
+                style: TextStyle(color: theme.hintColor),
+              ),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () => Navigator.pop(dialogContext, true),
               child: Text(loc.getString('delete') ?? "Delete"),
             ),
@@ -92,9 +143,25 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.getString('currency_deleted') ?? "Currency deleted successfully.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            loc.getString('currency_deleted') ??
+                "Currency deleted successfully.",
+          ),
+        ),
+      );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.errorMessage ?? loc.getString('could_not_delete') ?? "Unable to delete currency."), backgroundColor: Colors.red.shade700));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            provider.errorMessage ??
+                loc.getString('could_not_delete') ??
+                "Unable to delete currency.",
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
     }
   }
 
@@ -105,7 +172,8 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final loc = AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
+    final loc =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -115,9 +183,11 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
         elevation: 0,
         title: TextField(
           controller: _searchController,
+          textDirection: Directionality.of(context),
           style: TextStyle(color: theme.colorScheme.onSurface),
           decoration: InputDecoration(
-            hintText: loc.getString('search_currencies') ?? "Search currencies...",
+            hintText:
+                loc.getString('search_currencies') ?? "Search currencies...",
             hintStyle: TextStyle(color: theme.hintColor),
             prefixIcon: Icon(Icons.search_rounded, color: theme.hintColor),
             suffixIcon: _searchText.isNotEmpty
@@ -128,8 +198,12 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                 : null,
             filled: true,
             fillColor: theme.scaffoldBackgroundColor,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
           ),
         ),
         actions: [
@@ -156,11 +230,18 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline_rounded, size: 60, color: theme.hintColor),
+                    Icon(Icons.error_outline_rounded,
+                        size: 60, color: theme.hintColor),
                     const SizedBox(height: 16),
-                    Text(provider.errorMessage!, textAlign: TextAlign.center, style: TextStyle(color: theme.hintColor)),
+                    Text(provider.errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: theme.hintColor)),
                     const SizedBox(height: 20),
-                    ElevatedButton.icon(onPressed: _refresh, icon: const Icon(Icons.refresh), label: Text(loc.getString('retry') ?? "Try Again")),
+                    ElevatedButton.icon(
+                      onPressed: _refresh,
+                      icon: const Icon(Icons.refresh),
+                      label: Text(loc.getString('retry') ?? "Try Again"),
+                    ),
                   ],
                 ),
               ),
@@ -176,20 +257,38 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                  Icon(_searchText.isEmpty ? Icons.currency_exchange_rounded : Icons.search_off_rounded, size: 80, color: theme.hintColor.withValues(alpha: 0.5)),
+                  Icon(
+                    _searchText.isEmpty
+                        ? Icons.currency_exchange_rounded
+                        : Icons.search_off_rounded,
+                    size: 80,
+                    color: theme.hintColor.withValues(alpha: 0.5),
+                  ),
                   const SizedBox(height: 16),
                   Center(
                     child: Text(
-                      _searchText.isEmpty 
-                          ? loc.getString('no_currencies') ?? "No currencies yet." 
-                          : loc.getString('no_currencies_found') ?? "No currencies found.",
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                      _searchText.isEmpty
+                          ? loc.getString('no_currencies') ??
+                              "No currencies yet."
+                          : loc.getString('no_currencies_found') ??
+                              "No currencies found.",
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                   ),
                   if (_searchText.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: Center(child: Text(loc.getString('tap_add_currency') ?? "Tap + to add your first currency.", style: TextStyle(color: theme.hintColor))),
+                      child: Center(
+                        child: Text(
+                          loc.getString('tap_add_currency') ??
+                              "Tap + to add your first currency.",
+                          style: TextStyle(color: theme.hintColor),
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -248,6 +347,7 @@ class _CurrencyTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
+            textDirection: Directionality.of(context),
             children: [
               Container(
                 width: 54,
@@ -260,10 +360,14 @@ class _CurrencyTile extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    currency.symbol.trim().isNotEmpty ? currency.symbol.trim() : currency.currencyCode.substring(0, 1),
+                    currency.symbol.trim().isNotEmpty
+                        ? currency.symbol.trim()
+                        : currency.currencyCode.substring(0, 1),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF174A7E),
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white
+                          : const Color(0xFF174A7E),
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -279,13 +383,18 @@ class _CurrencyTile extends StatelessWidget {
                       currency.currencyName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: theme.brightness == Brightness.dark
                                 ? const Color(0xFF2C2C2C)
@@ -297,12 +406,21 @@ class _CurrencyTile extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF174A7E),
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.white
+                                  : const Color(0xFF174A7E),
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(currency.symbol, style: TextStyle(fontSize: 14, color: theme.hintColor, fontWeight: FontWeight.w600)),
+                        Text(
+                          currency.symbol,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.hintColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -310,7 +428,8 @@ class _CurrencyTile extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                icon:
+                    const Icon(Icons.delete_outline_rounded, color: Colors.red),
               ),
             ],
           ),

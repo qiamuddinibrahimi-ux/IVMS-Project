@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../models/unit_model.dart';
 import '../providers/unit_provider.dart';
-import '../localization/app_localizations.dart'; // ADDED
-import '../screens/qiamuddin_design.dart'; // ADDED
+import '../localization/app_localizations.dart';
+import '../screens/qiamuddin_design.dart';
 import 'unit_form_screen.dart';
 
 class UnitScreen extends StatefulWidget {
@@ -188,12 +188,8 @@ class _UnitScreenState extends State<UnitScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
-              Text(
-                (loc.getString('unit_id') ?? 'Unit ID: {id}')
-                    .replaceAll('{id}', '${unit.unitId}'),
-                style: TextStyle(color: theme.hintColor),
-              ),
+              // ✅ REMOVED: "Unit ID: {id}" text
+              //    (the id still exists in the model & backend — just not shown)
             ],
           ),
           actions: [
@@ -381,6 +377,7 @@ class _UnitScreenState extends State<UnitScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       unit.unitName,
@@ -390,15 +387,8 @@ class _UnitScreenState extends State<UnitScreen> {
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      (loc.getString('unit_id') ?? 'Unit ID: {id}')
-                          .replaceAll('{id}', '${unit.unitId}'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: theme.hintColor,
-                      ),
-                    ),
+                    // ✅ REMOVED: "Unit ID: {id}" text
+                    //    (the id is still used by edit/delete — not shown)
                   ],
                 ),
               ),
