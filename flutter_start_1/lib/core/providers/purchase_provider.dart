@@ -191,4 +191,10 @@ class PurchaseProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+  void clear() {
+  _purchases.clear();
+  _errorMessage = null;
+  _isLoading = false;
+  notifyListeners();
+}
 }

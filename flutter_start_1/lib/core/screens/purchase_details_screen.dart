@@ -5,8 +5,8 @@ import '../models/item_model.dart';
 import '../models/purchase_model.dart';
 import '../models/purchase_detail_model.dart';
 import '../providers/purchase_detail_provider.dart';
-import '../localization/app_localizations.dart'; // ADDED
-import '../screens/qiamuddin_design.dart'; // ADDED
+import '../localization/app_localizations.dart';
+import '../screens/qiamuddin_design.dart';
 
 class PurchaseDetailsScreen extends StatefulWidget {
   final String token;
@@ -54,9 +54,7 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
 
   double get _quantity =>
       double.tryParse(_quantityController.text.trim()) ?? 0;
-
   double get _price => double.tryParse(_priceController.text.trim()) ?? 0;
-
   double get _lineTotal => _quantity * _price;
 
   void _showMessage(String message, {bool error = false}) {
@@ -77,7 +75,6 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
 
   void _clearForm() {
     _formKey.currentState?.reset();
-
     setState(() {
       _editingDetailId = null;
       _selectedPurchaseId = null;
@@ -88,13 +85,10 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
   }
 
   void _editDetail(PurchaseDetailModel detail) {
-    final purchaseExists = widget.purchases.any(
-      (purchase) => purchase.purchaseId == detail.purchaseId,
-    );
-
-    final itemExists = widget.items.any(
-      (item) => item.itemId == detail.itemId,
-    );
+    final purchaseExists = widget.purchases
+        .any((purchase) => purchase.purchaseId == detail.purchaseId);
+    final itemExists =
+        widget.items.any((item) => item.itemId == detail.itemId);
 
     setState(() {
       _editingDetailId = detail.purchaseDetailId;
@@ -163,11 +157,10 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
     final loc =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
-    // ✅ QIAMUDDIN DELETE DIALOG
     final confirmed = await QiamuddinDesign.deleteConfirmationDialog(
       context: context,
-      title: loc.getString('delete_purchase_detail') ??
-          'Delete purchase detail?',
+      title:
+          loc.getString('delete_purchase_detail') ?? 'Delete purchase detail?',
       content: (loc.getString('delete_purchase_detail_confirm') ??
               'Delete {item} from purchase #{id}?')
           .replaceAll('{item}', detail.itemName)
@@ -218,9 +211,8 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
         ? (loc.getString('unknown_vendor') ?? 'Unknown vendor')
         : purchase.vendorName;
 
-    final date = purchase.purchaseDate.isEmpty
-        ? ''
-        : ' • ${purchase.purchaseDate.split('T').first}';
+    final date =
+        purchase.purchaseDate.isEmpty ? '' : ' • ${purchase.purchaseDate.split('T').first}';
 
     return '$invoice • $vendor$date';
   }
@@ -245,9 +237,9 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
           IconButton(
             tooltip: loc.getString('refresh_records') ?? 'Refresh records',
             onPressed: () {
-              context.read<PurchaseDetailProvider>().loadDetails(
-                    token: widget.token,
-                  );
+              context
+                  .read<PurchaseDetailProvider>()
+                  .loadDetails(token: widget.token);
             },
             icon: const Icon(Icons.refresh),
           ),
@@ -318,12 +310,17 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
     final loc =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
+    final selectedPurchase = widget.purchases
+        .where((p) => p.purchaseId == _selectedPurchaseId)
+        .firstOrNull;
+    final selectedItem = widget.items
+        .where((i) => i.itemId == _selectedItemId)
+        .firstOrNull;
+
     return Card(
       color: theme.cardColor,
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -345,37 +342,22 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
               ),
               const SizedBox(height: 16),
 
-              DropdownButtonFormField<int>(
-                value: _selectedPurchaseId,
-                isExpanded: true,
-                dropdownColor: theme.cardColor,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                decoration: InputDecoration(
-                  labelText: loc.getString('purchase_invoice_required') ??
-                      'Purchase invoice *',
-                  labelStyle: TextStyle(color: theme.hintColor),
-                  prefixIcon: Icon(Icons.receipt_long, color: theme.hintColor),
-                  filled: true,
-                  fillColor: theme.scaffoldBackgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                items: widget.purchases.map((purchase) {
-                  return DropdownMenuItem<int>(
-                    value: purchase.purchaseId,
-                    child: Text(
-                      _purchaseLabel(purchase),
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedPurchaseId = value);
+              // ✅ SEARCHABLE PURCHASE DROPDOWN
+              QiamuddinDesign.searchableDropdown<PurchaseModel>(
+                context: context,
+                label: loc.getString('purchase_invoice_required') ??
+                    'Purchase invoice *',
+                hintText: 'Select purchase invoice',
+                searchHintText: 'Search invoice or vendor...',
+                noResultsText: 'No matching purchases found',
+                prefixIcon: Icons.receipt_long,
+                items: widget.purchases,
+                selectedItem: selectedPurchase,
+                itemAsString: (purchase) => _purchaseLabel(purchase),
+                onChanged: (purchase) {
+                  setState(() => _selectedPurchaseId = purchase?.purchaseId);
                 },
-                validator: (value) => value == null
+                validator: (purchase) => purchase == null
                     ? (loc.getString('select_purchase_invoice') ??
                         'Select a purchase invoice.')
                     : null,
@@ -393,36 +375,21 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
 
               const SizedBox(height: 14),
 
-              DropdownButtonFormField<int>(
-                value: _selectedItemId,
-                isExpanded: true,
-                dropdownColor: theme.cardColor,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                decoration: InputDecoration(
-                  labelText: loc.getString('item_required') ?? 'Item *',
-                  labelStyle: TextStyle(color: theme.hintColor),
-                  prefixIcon: Icon(Icons.inventory_2, color: theme.hintColor),
-                  filled: true,
-                  fillColor: theme.scaffoldBackgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                items: widget.items.map((item) {
-                  return DropdownMenuItem<int>(
-                    value: item.itemId,
-                    child: Text(
-                      '${item.itemName} (#${item.itemId})',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedItemId = value);
+              // ✅ SEARCHABLE ITEM DROPDOWN
+              QiamuddinDesign.searchableDropdown<ItemModel>(
+                context: context,
+                label: loc.getString('item_required') ?? 'Item *',
+                hintText: 'Select item',
+                searchHintText: 'Search items by name...',
+                noResultsText: 'No matching items found',
+                prefixIcon: Icons.inventory_2,
+                items: widget.items,
+                selectedItem: selectedItem,
+                itemAsString: (item) => item.itemName,
+                onChanged: (item) {
+                  setState(() => _selectedItemId = item?.itemId);
                 },
-                validator: (value) => value == null
+                validator: (item) => item == null
                     ? (loc.getString('select_item') ?? 'Select an item.')
                     : null,
               ),
@@ -441,14 +408,13 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
 
               TextFormField(
                 controller: _quantityController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 textDirection: Directionality.of(context),
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
-                  labelText: loc.getString('quantity_required') ??
-                      'Quantity *',
+                  labelText:
+                      loc.getString('quantity_required') ?? 'Quantity *',
                   labelStyle: TextStyle(color: theme.hintColor),
                   prefixIcon: Icon(Icons.numbers, color: theme.hintColor),
                   filled: true,
@@ -461,14 +427,12 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
                 onChanged: (_) => setState(() {}),
                 validator: (value) {
                   final quantity = double.tryParse(value?.trim() ?? '');
-
                   if (quantity == null ||
                       !quantity.isFinite ||
                       quantity <= 0) {
                     return loc.getString('enter_quantity_greater') ??
                         'Enter a quantity greater than zero.';
                   }
-
                   return null;
                 },
               ),
@@ -477,14 +441,13 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
 
               TextFormField(
                 controller: _priceController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 textDirection: Directionality.of(context),
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
-                  labelText: loc.getString('unit_price_required') ??
-                      'Unit price *',
+                  labelText:
+                      loc.getString('unit_price_required') ?? 'Unit price *',
                   labelStyle: TextStyle(color: theme.hintColor),
                   prefixIcon:
                       Icon(Icons.payments_outlined, color: theme.hintColor),
@@ -498,12 +461,10 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
                 onChanged: (_) => setState(() {}),
                 validator: (value) {
                   final price = double.tryParse(value?.trim() ?? '');
-
                   if (price == null || !price.isFinite || price < 0) {
                     return loc.getString('enter_valid_price') ??
                         'Enter a valid price of zero or greater.';
                   }
-
                   return null;
                 },
               ),
@@ -541,7 +502,6 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
 
               const SizedBox(height: 16),
 
-              // ✅ QIAMUDDIN PRIMARY BUTTON
               QiamuddinDesign.primaryButton(
                 context: context,
                 text: provider.isSaving
@@ -593,9 +553,7 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
     return Card(
       color: theme.cardColor,
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -628,12 +586,10 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
                       ),
                       Text(
                         (loc.getString('purchase_num') ?? 'Purchase #{id}')
-                                .replaceAll(
-                                    '{id}', '${detail.purchaseId}') +
+                                .replaceAll('{id}', '${detail.purchaseId}') +
                             ' • ' +
                             (loc.getString('detail_num') ?? 'Detail #{id}')
-                                .replaceAll(
-                                    '{id}', '${detail.purchaseDetailId}'),
+                                .replaceAll('{id}', '${detail.purchaseDetailId}'),
                         style: TextStyle(
                           color: theme.hintColor,
                           fontSize: 12,
@@ -655,10 +611,7 @@ class _PurchaseDetailsScreenState extends State<PurchaseDetailsScreen> {
                 IconButton(
                   tooltip: loc.getString('delete') ?? 'Delete',
                   onPressed: () => _deleteDetail(detail),
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                  ),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
                 ),
               ],
             ),

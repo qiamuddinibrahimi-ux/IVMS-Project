@@ -208,4 +208,10 @@ class PurchasePaymentProvider
     _errorMessage = null;
     notifyListeners();
   }
+    void clear() {
+    _payments.clear();
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+  }
 }

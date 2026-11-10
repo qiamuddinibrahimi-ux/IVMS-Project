@@ -40,6 +40,11 @@ static const String userMe = "/users/me";
 
   static const String adminLogout =
       "/admin/logout";
+      static const String adminStats = "/admin/stats";
+        // ✅ USER MANAGEMENT ROUTES
+  static const String adminUsers = "/admin/users";
+  static String adminUserDetails(int id) => "/admin/users/$id";
+  static String adminUserToggleStatus(int id) => "/admin/users/$id/toggle-status";
 
       static const String categories = "/categories";
 

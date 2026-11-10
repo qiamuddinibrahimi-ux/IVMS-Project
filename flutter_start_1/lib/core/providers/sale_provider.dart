@@ -219,4 +219,11 @@ class SaleProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  void clear() {
+  _sales.clear();
+  _errorMessage = null;
+  _isLoading = false;
+  notifyListeners();
+}
 }

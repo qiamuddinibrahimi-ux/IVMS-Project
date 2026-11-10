@@ -54,7 +54,6 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
 
   void _resetForm() {
     _formKey.currentState?.reset();
-
     setState(() {
       _selectedSaleId = null;
       _selectedItemId = null;
@@ -70,21 +69,16 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
     return quantity * price;
   }
 
-  /// ✅ Format a sale for display in the dropdown:
-  ///    "INV-001 • Customer Name • 2025-11-01"
   String _saleDropdownLabel(SaleModel sale) {
     final invoice = sale.invoiceNo.trim().isNotEmpty
         ? sale.invoiceNo.trim()
         : 'Sale #${sale.saleId}';
-
     final customer = sale.customerName.trim().isNotEmpty
         ? sale.customerName.trim()
         : 'Unknown customer';
-
     final date = sale.saleDate.length >= 10
         ? sale.saleDate.substring(0, 10)
         : sale.saleDate;
-
     return '$invoice • $customer • $date';
   }
 
@@ -194,9 +188,7 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
   }
 
   Future<void> _refreshDetails() async {
-    await context.read<SalesDetailProvider>().loadDetails(
-          token: widget.token,
-        );
+    await context.read<SalesDetailProvider>().loadDetails(token: widget.token);
   }
 
   void _showMessage(String message) {
@@ -297,12 +289,18 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
     final loc =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
+    // Find selected objects for the searchable dropdowns
+    final selectedSale = widget.sales
+        .where((s) => s.saleId == _selectedSaleId)
+        .firstOrNull;
+    final selectedItem = widget.items
+        .where((i) => i.itemId == _selectedItemId)
+        .firstOrNull;
+
     return Card(
       color: theme.cardColor,
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -328,8 +326,7 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
                               'Add Sales Detail')
                           : (loc.getString('edit_sales_detail_num') ??
                                   'Edit Sales Detail #{id}')
-                              .replaceAll(
-                                  '{id}', '$_editingDetailId'),
+                              .replaceAll('{id}', '$_editingDetailId'),
                       style: TextStyle(
                         color: theme.colorScheme.onSurface,
                         fontSize: 18,
@@ -342,76 +339,48 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
                       tooltip:
                           loc.getString('cancel_editing') ?? 'Cancel editing',
                       onPressed: _resetForm,
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: theme.hintColor,
-                      ),
+                      icon: Icon(Icons.close_rounded, color: theme.hintColor),
                     ),
                 ],
               ),
               const SizedBox(height: 18),
 
-              // ✅ SALE DROPDOWN — shows invoice • customer • date
-              DropdownButtonFormField<int>(
-                value: _selectedSaleId,
-                isExpanded: true,
-                dropdownColor: theme.cardColor,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                decoration: _inputDecoration(
-                    theme, loc.getString('select_sale') ?? 'Sale'),
-                hint: Text(
-                  loc.getString('select_sale') ?? 'Select sale',
-                  style: TextStyle(color: theme.hintColor),
-                ),
-                items: widget.sales.map((sale) {
-                  return DropdownMenuItem<int>(
-                    value: sale.saleId,
-                    child: Text(
-                      _saleDropdownLabel(sale),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface,
-                        fontSize: 13,
-                      ),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedSaleId = value);
+              // ✅ SEARCHABLE SALE DROPDOWN
+              QiamuddinDesign.searchableDropdown<SaleModel>(
+                context: context,
+                label: loc.getString('select_sale') ?? 'Sale',
+                hintText: loc.getString('select_sale') ?? 'Select sale',
+                searchHintText: 'Search invoice or customer...',
+                noResultsText: 'No matching sales found',
+                prefixIcon: Icons.receipt_long,
+                items: widget.sales,
+                selectedItem: selectedSale,
+                itemAsString: (sale) => _saleDropdownLabel(sale),
+                onChanged: (sale) {
+                  setState(() => _selectedSaleId = sale?.saleId);
                 },
-                validator: (value) => value == null
+                validator: (sale) => sale == null
                     ? (loc.getString('please_select_sale') ??
                         'Please select a sale.')
                     : null,
               ),
               const SizedBox(height: 14),
 
-              DropdownButtonFormField<int>(
-                value: _selectedItemId,
-                isExpanded: true,
-                dropdownColor: theme.cardColor,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                decoration: _inputDecoration(
-                    theme, loc.getString('item') ?? 'Item'),
-                hint: Text(
-                  loc.getString('select_item') ?? 'Select item',
-                  style: TextStyle(color: theme.hintColor),
-                ),
-                items: widget.items.map((item) {
-                  return DropdownMenuItem<int>(
-                    value: item.itemId,
-                    child: Text(
-                      item.itemName,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedItemId = value);
+              // ✅ SEARCHABLE ITEM DROPDOWN
+              QiamuddinDesign.searchableDropdown<ItemModel>(
+                context: context,
+                label: loc.getString('item') ?? 'Item',
+                hintText: loc.getString('select_item') ?? 'Select item',
+                searchHintText: 'Search items by name...',
+                noResultsText: 'No matching items found',
+                prefixIcon: Icons.inventory_2_outlined,
+                items: widget.items,
+                selectedItem: selectedItem,
+                itemAsString: (item) => item.itemName,
+                onChanged: (item) {
+                  setState(() => _selectedItemId = item?.itemId);
                 },
-                validator: (value) => value == null
+                validator: (item) => item == null
                     ? (loc.getString('please_select_item') ??
                         'Please select an item.')
                     : null,
@@ -420,9 +389,8 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
 
               TextFormField(
                 controller: _quantityController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 textDirection: Directionality.of(context),
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: _inputDecoration(
@@ -441,9 +409,8 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
 
               TextFormField(
                 controller: _unitPriceController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 textDirection: Directionality.of(context),
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: _inputDecoration(
@@ -522,14 +489,10 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: theme.hintColor),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.4),
-        ),
+        borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.4)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -549,10 +512,8 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
     final loc =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('en'));
 
-    // ✅ Lookup the sale for this detail to show real info
-    final sale = widget.sales
-        .where((s) => s.saleId == detail.saleId)
-        .firstOrNull;
+    final sale =
+        widget.sales.where((s) => s.saleId == detail.saleId).firstOrNull;
 
     final invoice = sale?.invoiceNo.trim().isNotEmpty == true
         ? sale!.invoiceNo
@@ -568,9 +529,7 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.3),
-        ),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(15),
@@ -609,7 +568,6 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      // ✅ Show real sale info (invoice + customer)
                       Text(
                         customer.isEmpty
                             ? '$invoice • Detail #${detail.saleDetailId}'
@@ -627,18 +585,13 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
                 IconButton(
                   tooltip: loc.getString('edit') ?? 'Edit',
                   onPressed: () => _editDetail(detail),
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    color: Color(0xFF1976D2),
-                  ),
+                  icon: const Icon(Icons.edit_outlined, color: Color(0xFF1976D2)),
                 ),
                 IconButton(
                   tooltip: loc.getString('delete') ?? 'Delete',
                   onPressed: () => _deleteDetail(detail),
-                  icon: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: Colors.red,
-                  ),
+                  icon:
+                      const Icon(Icons.delete_outline_rounded, color: Colors.red),
                 ),
               ],
             ),
@@ -656,10 +609,7 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
             ),
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(10),
@@ -713,18 +663,12 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
 
     return Card(
       color: theme.cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(
           children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 46,
-              color: theme.hintColor,
-            ),
+            Icon(Icons.receipt_long_outlined, size: 46, color: theme.hintColor),
             const SizedBox(height: 12),
             Text(
               loc.getString('no_sales_details_found') ??
@@ -753,18 +697,13 @@ class _SalesDetailsScreenState extends State<SalesDetailsScreen> {
 
     return Card(
       color: theme.cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              color: Colors.red,
-              size: 40,
-            ),
+            const Icon(Icons.error_outline_rounded,
+                color: Colors.red, size: 40),
             const SizedBox(height: 10),
             Text(
               provider.errorMessage ??

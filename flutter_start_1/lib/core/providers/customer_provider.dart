@@ -191,4 +191,11 @@ class CustomerProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+
+  void clear() {
+  _customers.clear();
+  _errorMessage = null;
+  _isLoading = false;
+  notifyListeners();
+}
 }

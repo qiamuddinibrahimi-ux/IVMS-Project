@@ -212,4 +212,11 @@ class ItemProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  void clear() {
+  _items.clear();
+  _errorMessage = null;
+  _isLoading = false;
+  notifyListeners();
+}
 }

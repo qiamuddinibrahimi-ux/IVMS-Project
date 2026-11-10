@@ -1,4 +1,3 @@
-import 'package:flutter_start_1/core/screens/splash_screen.dart';
 
 import 'core/network/api_client.dart';
 import 'core/services/sales_detail_service.dart';
@@ -98,7 +97,7 @@ void main() {
   // SHARED CORE
   // ====================================================
   final apiClient = ApiClient();
-  final storageService = StorageService();
+  
 
   final reportService = ReportService(apiClient: apiClient);
   final reportRepository = ReportRepository(reportService: reportService);
@@ -170,51 +169,109 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AdminProvider(repository: adminRepository),
-        ),
+        // ✅ 1. AUTH MUST BE FIRST (Other providers depend on it)
         ChangeNotifierProvider(
           create: (_) => AuthProvider(repository: authRepository),
         ),
+        
         ChangeNotifierProvider(
+          create: (_) => AdminProvider(repository: adminRepository),
+        ),
+
+        // ✅ 2. USE PROXY PROVIDERS FOR ALL USER-SPECIFIC DATA
+        // This automatically clears old data when the user logs out
+        
+        ChangeNotifierProxyProvider<AuthProvider, CategoryProvider>(
           create: (_) => CategoryProvider(repository: categoryRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
+        
+        ChangeNotifierProxyProvider<AuthProvider, CurrencyProvider>(
           create: (_) => CurrencyProvider(repository: currencyRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
+        
+        ChangeNotifierProxyProvider<AuthProvider, CustomerProvider>(
           create: (_) => CustomerProvider(repository: customerRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
-          create: (_) => CustomerPaymentProvider(
-            repository: customerPaymentRepository,
-          ),
+        
+        ChangeNotifierProxyProvider<AuthProvider, CustomerPaymentProvider>(
+          create: (_) => CustomerPaymentProvider(repository: customerPaymentRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
-          create: (_) => ExchangeRateProvider(
-            repository: exchangeRateRepository,
-          ),
+        
+        ChangeNotifierProxyProvider<AuthProvider, ExchangeRateProvider>(
+          create: (_) => ExchangeRateProvider(repository: exchangeRateRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
+        
+        ChangeNotifierProxyProvider<AuthProvider, ItemProvider>(
           create: (_) => ItemProvider(repository: itemRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
+        
+        ChangeNotifierProxyProvider<AuthProvider, UnitProvider>(
           create: (_) => UnitProvider(repository: unitRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
+        
+        ChangeNotifierProxyProvider<AuthProvider, VendorProvider>(
           create: (_) => VendorProvider(repository: vendorRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
+        
+        ChangeNotifierProxyProvider<AuthProvider, PurchaseProvider>(
           create: (_) => PurchaseProvider(repository: purchaseRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
-          create: (_) => PurchasePaymentProvider(
-            repository: purchasePaymentRepository,
-          ),
+        
+        ChangeNotifierProxyProvider<AuthProvider, PurchasePaymentProvider>(
+          create: (_) => PurchasePaymentProvider(repository: purchasePaymentRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
-        ChangeNotifierProvider(
+        
+        ChangeNotifierProxyProvider<AuthProvider, SaleProvider>(
           create: (_) => SaleProvider(repository: saleRepository),
+          update: (_, auth, provider) {
+            if (auth.user == null) provider?.clear();
+            return provider!;
+          },
         ),
+        
+        // ✅ 3. THE REST DO NOT HOLD USER-SPECIFIC TENANT DATA
+        // (Or they handle their own state via token)
+        
         ChangeNotifierProvider(
           create: (_) => PurchaseDetailProvider(
             service: PurchaseDetailService(apiClient: apiClient),
@@ -240,9 +297,9 @@ void main() {
             service: SalesDetailService(apiClient: apiClient),
           ),
         ),
-        // ✅ LocaleProvider for language switching
+        
+        // ✅ 4. GLOBAL PROVIDERS
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
-        // ✅ ADDED: ThemeProvider for light/dark mode switching
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(),
@@ -280,7 +337,7 @@ class MyApp extends StatelessWidget {
       ],
 
       // ============================
-      // LIGHT THEME (unchanged)
+      // LIGHT THEME
       // ============================
       theme: ThemeData(
         useMaterial3: true,
@@ -316,7 +373,7 @@ class MyApp extends StatelessWidget {
       ),
 
       // ============================
-      // DARK THEME (unchanged)
+      // DARK THEME
       // ============================
       darkTheme: ThemeData(
         useMaterial3: true,
@@ -354,7 +411,6 @@ class MyApp extends StatelessWidget {
 
       // ============================
       // ✅ DYNAMIC THEME MODE
-      //    (light / dark / system from ThemeProvider)
       // ============================
       themeMode: themeProvider.themeMode,
 

@@ -186,4 +186,10 @@ class CategoryProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+   void clear() {
+    _categories.clear();
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+  }
 }

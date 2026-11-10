@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/admin_provider.dart';
+import '../screens/qiamuddin_design.dart'; // ✅ Added QiamuddinDesign
 import 'admin_dashboard_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
@@ -62,192 +63,210 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get theme data automatically
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Admin Icon
-                  Icon(
-                    Icons.admin_panel_settings_rounded,
-                    size: 80,
-                    color: theme.colorScheme.onBackground,
-                  ),
+      body: Consumer<AdminProvider>(
+        builder: (context, provider, child) {
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 40),
 
-                  const SizedBox(height: 20),
-
-                  // Title
-                  Text(
-                    "AlMadina Inventory",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onBackground,
+                    // ✅ SAME ICON AS USER LOGIN
+                    Icon(
+                      Icons.inventory_2_rounded,
+                      size: 80,
+                      color: theme.colorScheme.onSurface,
                     ),
-                  ),
 
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 24),
 
-                  // Subtitle
-                  Text(
-                    "Admin Panel",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: theme.hintColor,
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Email Field
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: TextStyle(color: theme.colorScheme.onBackground),
-                    decoration: InputDecoration(
-                      hintText: "Admin Email",
-                      hintStyle: TextStyle(color: theme.hintColor),
-                      filled: true,
-                      fillColor: theme.cardColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
+                    // ✅ SAME TITLE AS USER LOGIN
+                    Text(
+                      'AlMadina Inventory',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Please enter your email.";
-                      }
 
-                      final emailRegex = RegExp(
-                        r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                      );
+                    const SizedBox(height: 8),
 
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return "Please enter a valid email.";
-                      }
-
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Password Field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    style: TextStyle(color: theme.colorScheme.onBackground),
-                    decoration: InputDecoration(
-                      hintText: "Password",
-                      hintStyle: TextStyle(color: theme.hintColor),
-                      filled: true,
-                      fillColor: theme.cardColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
+                    // ✅ SUBTITLE (Admin Panel)
+                    Text(
+                      'Admin Panel',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: theme.hintColor,
                       ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: theme.hintColor,
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // EMAIL
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textDirection: Directionality.of(context),
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        hintText: 'Admin Email',
+                        hintStyle: TextStyle(color: theme.hintColor),
+                        filled: true,
+                        fillColor: theme.cardColor,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
                       ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return "Please enter your email.";
+                        }
+                        final emailRegex =
+                            RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                        if (!emailRegex.hasMatch(value.trim())) {
+                          return "Please enter a valid email.";
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter your password.";
-                      }
-                      return null;
-                    },
-                  ),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 16),
 
-                  // Login Button
-                  Consumer<AdminProvider>(
-                    builder: (context, provider, child) {
-                      return SizedBox(
-                        height: 52,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                theme.brightness == Brightness.dark
-                                    ? const Color(0xFFE0E0E0)
-                                    : const Color(0xFF102C4A),
-                            foregroundColor:
-                                theme.brightness == Brightness.dark
-                                    ? Colors.black
-                                    : Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
+                    // PASSWORD
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textDirection: Directionality.of(context),
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        hintText: 'Password',
+                        hintStyle: TextStyle(color: theme.hintColor),
+                        filled: true,
+                        fillColor: theme.cardColor,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: theme.hintColor,
                           ),
-                          onPressed: provider.isLoading ? null : _login,
-                          child: provider.isLoading
-                              ? SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color:
-                                        theme.brightness == Brightness.dark
-                                            ? Colors.black
-                                            : Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  "ADMIN LOGIN",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    letterSpacing: 1.0,
-                                  ),
-                                ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Footer Note
-                  Text(
-                    "Admin access is restricted to authorized administrators.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.hintColor,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please enter your password.";
+                        }
+                        return null;
+                      },
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 24),
+
+                    // ✅ QIAMUDDIN LOGIN BUTTON (Matches User Login)
+                    QiamuddinDesign.primaryButton(
+                      context: context,
+                      text: 'ADMIN LOGIN',
+                      icon: Icons.login_rounded,
+                      isLoading: provider.isLoading,
+                      onPressed: _login,
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // DIVIDER
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: theme.dividerColor)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            'Or sign in with',
+                            style: TextStyle(
+                                color: theme.hintColor, fontSize: 12),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: theme.dividerColor)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // SOCIAL
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: 50,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.apple,
+                            color: theme.colorScheme.onSurface,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Container(
+                          height: 50,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.g_mobiledata,
+                            color: theme.colorScheme.onSurface,
+                            size: 32,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // FOOTER NOTE
+                    Text(
+                      "Admin access is restricted to authorized administrators.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.hintColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

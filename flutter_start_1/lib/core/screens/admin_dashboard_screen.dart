@@ -1,709 +1,518 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/admin_provider.dart';
-
 import 'admin_login_screen.dart';
 import 'admin_profile_screen.dart';
+import 'user_management_screen.dart';
+import 'activity_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() =>
-      _AdminDashboardScreenState();
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState
-    extends State<AdminDashboardScreen> {
+class _AdminDashboardScreenState extends State<AdminDashboardScreen>
+    with TickerProviderStateMixin {
+  static const Color gold = Color(0xFFE5C77A);
 
-  // ============================================================
-  // INIT
-  // ============================================================
+  // ✅ CHANGED: Not 'late', initialized to null safely
+  AnimationController? _ringController;
 
   @override
   void initState() {
     super.initState();
 
-    Future.microtask(() {
-      context.read<AdminProvider>().loadAdmin();
+    // ✅ Safe initialization
+    _ringController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final provider = context.read<AdminProvider>();
+      
+      // 1. Load Admin Info
+      await provider.loadAdmin();
+      
+      // 2. Load Dashboard Stats
+      await provider.loadDashboardStats();
     });
   }
 
-  // ============================================================
-  // LOGOUT
-  // ============================================================
+  @override
+  void dispose() {
+    // ✅ Safe disposal
+    _ringController?.dispose();
+    super.dispose();
+  }
 
   Future<void> _logout() async {
     final provider = context.read<AdminProvider>();
-
     await provider.logout();
 
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) => const AdminLoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
       (route) => false,
     );
   }
 
-  // ============================================================
-  // OPEN ADMIN PROFILE
-  // ============================================================
-
   void _openProfile() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const AdminProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AdminProfileScreen()),
     );
   }
 
   // ============================================================
-  // BUILD
+  // RESPONSIVE BREAKPOINTS
   // ============================================================
+  bool _isCompact(double w) => w < 340;
+  bool _isSmall(double w) => w < 360;
+  bool _isTablet(double w) => w >= 600 && w < 900;
+  bool _isDesktop(double w) => w >= 900;
+
+  int _gridColumns(double w) {
+    if (_isDesktop(w)) return 4;
+    if (_isTablet(w)) return 3;
+    return 2;
+  }
+
+  double _gridAspectRatio(double w) {
+    if (_isDesktop(w)) return 1.25;
+    if (_isTablet(w)) return 1.18;
+    if (_isCompact(w)) return 0.95;
+    return 1.12;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AdminProvider>(
-      builder: (
-        context,
-        provider,
-        child,
-      ) {
-        final admin = provider.admin;
+    final theme = Theme.of(context);
+    final provider = context.watch<AdminProvider>();
+    final admin = provider.admin;
 
-        // ======================================================
-        // ADMIN INFORMATION
-        // ======================================================
+    final adminName = admin?.adminName.trim().isNotEmpty == true
+        ? admin!.adminName.trim()
+        : "Admin";
+    final adminEmail = admin?.email ?? "";
+    final firstLetter = adminName.isNotEmpty ? adminName[0].toUpperCase() : "A";
 
-        final adminName =
-            admin?.adminName.trim().isNotEmpty == true
-                ? admin!.adminName.trim()
-                : "Admin";
+    // ✅ REAL DATA EXTRACTION
+    final totalUsers = admin?.totalUsers ?? 0;
+    final totalItems = admin?.totalItems ?? 0;
+    final totalSales = admin?.totalSales ?? 0;
+    final totalProfit = admin?.totalProfit ?? 0.0;
 
-        final adminEmail =
-            admin?.email ?? "";
+    // Responsive variables
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final isCompact = _isCompact(width);
+    final isSmall = _isSmall(width);
+    final isTablet = _isTablet(width);
+    final isDesktop = _isDesktop(width);
 
-        final firstLetter =
-            adminName.isNotEmpty
-                ? adminName[0].toUpperCase()
-                : "A";
+    final avatarSize = isDesktop ? 76.0 : isTablet ? 72.0 : isCompact ? 54.0 : 64.0;
+    final appBarHeight = isDesktop ? 108.0 : isTablet ? 104.0 : isCompact ? 80.0 : 92.0;
+    final horizontalPad = isDesktop ? 28.0 : isTablet ? 24.0 : isCompact ? 12.0 : 18.0;
+    final iconSize = isCompact ? 22.0 : 24.0;
+    final nameSize = isDesktop ? 19.0 : isTablet ? 18.0 : isCompact ? 14.0 : 17.0;
+    final emailSize = isCompact ? 10.5 : 12.0;
 
-        return Scaffold(
+    final columns = _gridColumns(width);
+    final aspectRatio = _gridAspectRatio(width);
 
-          // ====================================================
-          // APP BAR
-          // ====================================================
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
 
-          appBar: AppBar(
-            backgroundColor:
-                const Color(0xFF102C4A),
-
-            foregroundColor:
-                Colors.white,
-
-            elevation: 0,
-
-            toolbarHeight: 76,
-
-            titleSpacing: 16,
-
-            title: GestureDetector(
-              onTap: _openProfile,
-
+      // ============================================================
+      // APP BAR WITH ANIMATED AVATAR
+      // ============================================================
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(appBarHeight),
+        child: Material(
+          color: theme.cardColor,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: 8),
               child: Row(
                 children: [
+                  // ✅ ANIMATED AVATAR
+                  InkWell(
+                    onTap: _openProfile,
+                    borderRadius: BorderRadius.circular(avatarSize),
+                    child: SizedBox(
+                      width: avatarSize,
+                      height: avatarSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // 1. Rotating dashed ring
+                          if (_ringController != null)
+                            AnimatedBuilder(
+                              animation: _ringController!,
+                              builder: (context, _) {
+                                return Transform.rotate(
+                                  angle: _ringController!.value * 2 * 3.1415926535,
+                                  child: CustomPaint(
+                                    size: Size(avatarSize - 2, avatarSize - 2),
+                                    painter: _DashedRingPainter(
+                                      color: gold,
+                                      strokeWidth: isCompact ? 2.2 : 3,
+                                      dashCount: 24,
+                                      dashFraction: 0.55,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
 
-                  // ==========================================
-                  // ADMIN INITIAL AVATAR
-                  // ==========================================
-
-                  Container(
-                    width: 48,
-                    height: 48,
-
-                    decoration:
-                        BoxDecoration(
-                      shape:
-                          BoxShape.circle,
-
-                      gradient:
-                          const LinearGradient(
-                        colors: [
-                          Color(0xFFE5C77A),
-                          Color(0xFFF4DFA0),
+                          // 2. Inner Gold Avatar
+                          Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: gold.withValues(alpha: 0.9),
+                                width: isCompact ? 1.2 : 1.8,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: (avatarSize - 12) / 2,
+                              backgroundColor: gold,
+                              child: Text(
+                                firstLetter,
+                                style: TextStyle(
+                                  color: const Color(0xFF102C4A),
+                                  fontSize: isCompact ? 16 : 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
-
-                        begin:
-                            Alignment.topLeft,
-
-                        end:
-                            Alignment.bottomRight,
                       ),
-
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black
-                              .withOpacity(0.20),
-
-                          blurRadius: 8,
-
-                          offset:
-                              const Offset(0, 3),
-                        ),
-                      ],
                     ),
+                  ),
+                  SizedBox(width: isCompact ? 8 : 14),
 
-                    child: Center(
-                      child: Text(
-                        firstLetter,
-
-                        style:
-                            const TextStyle(
-                          fontSize: 21,
-                          fontWeight:
-                              FontWeight.w800,
-
-                          color:
-                              Color(0xFF102C4A),
+                  // NAME / EMAIL
+                  Expanded(
+                    child: InkWell(
+                      onTap: _openProfile,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              adminName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface,
+                                fontSize: nameSize,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: isCompact ? 2 : 4),
+                            Text(
+                              adminEmail.isNotEmpty ? adminEmail : 'Administrator',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: theme.hintColor,
+                                fontSize: emailSize,
+                              ),
+                            ),
+                            if (!isCompact) ...[
+                              SizedBox(height: isSmall ? 2 : 3),
+                              Text(
+                                'AlMadina System Admin',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: gold,
+                                  fontSize: isCompact ? 9.0 : 10.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(width: 12),
+                  SizedBox(width: isCompact ? 2 : 8),
 
-                  // ==========================================
-                  // ADMIN NAME + EMAIL
-                  // ==========================================
-
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
-
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-
-                      children: [
-
-                        Text(
-                          adminName,
-
-                          maxLines: 1,
-
-                          overflow:
-                              TextOverflow.ellipsis,
-
-                          style:
-                              const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight:
-                                FontWeight.w700,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 3,
-                        ),
-
-                        Text(
-                          adminEmail,
-
-                          maxLines: 1,
-
-                          overflow:
-                              TextOverflow.ellipsis,
-
-                          style: TextStyle(
-                            color: Colors.white
-                                .withOpacity(0.72),
-
-                            fontSize: 12.5,
-
-                            fontWeight:
-                                FontWeight.w400,
-                          ),
-                        ),
-                      ],
+                  // LOGOUT ICON
+                  IconButton(
+                    visualDensity: isCompact ? VisualDensity.compact : VisualDensity.standard,
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: iconSize + 8,
+                      minHeight: iconSize + 8,
+                    ),
+                    tooltip: "Logout",
+                    onPressed: _logout,
+                    icon: Icon(
+                      Icons.logout_rounded,
+                      color: theme.colorScheme.onSurface,
+                      size: iconSize,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // ==================================================
-            // LOGOUT BUTTON
-            // ==================================================
-
-            actions: [
-              IconButton(
-                tooltip: "Logout",
-
-                icon: const Icon(
-                  Icons.logout_rounded,
-                ),
-
-                onPressed: _logout,
-              ),
-
-              const SizedBox(width: 6),
-            ],
           ),
+        ),
+      ),
 
-          // ====================================================
-          // BODY
-          // ====================================================
-
-          body: provider.isLoading &&
-                  admin == null
-
-              ? const Center(
-                  child:
-                      CircularProgressIndicator(),
-                )
-
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    await provider.loadAdmin();
-                  },
-
-                  child: SingleChildScrollView(
-                    physics:
-                        const AlwaysScrollableScrollPhysics(),
-
-                    padding:
-                        const EdgeInsets.all(20),
-
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-
-                      children: [
-
-                        // ======================================
-                        // SYSTEM OVERVIEW
-                        // ======================================
-
-                        const Text(
-                          "System Overview",
-
-                          style:
-                              TextStyle(
-                            fontSize: 22,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
+      // ============================================================
+      // BODY
+      // ============================================================
+      body: provider.isLoading && admin == null
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () async {
+                await provider.loadAdmin();
+                await provider.loadDashboardStats();
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isCompact ? 10 : 16,
+                  vertical: 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ERROR MESSAGE
+                    if (provider.errorMessage != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-
-                        const SizedBox(
-                          height: 16,
-                        ),
-
-                        // ======================================
-                        // OVERVIEW GRID
-                        // ======================================
-
-                        GridView.count(
-                          crossAxisCount: 2,
-
-                          shrinkWrap: true,
-
-                          physics:
-                              const NeverScrollableScrollPhysics(),
-
-                          crossAxisSpacing: 14,
-
-                          mainAxisSpacing: 14,
-
-                          childAspectRatio:
-                              1.15,
-
+                        child: Row(
                           children: [
-
-                            // =================================
-                            // USERS
-                            // =================================
-
-                            _DashboardTile(
-                              icon:
-                                  Icons.people_alt_rounded,
-
-                              title:
-                                  "Users",
-
-                              value:
-                                  "0",
-
-                              color:
-                                  const Color(0xFF174A7E),
-
-                              onTap: () {
-                                ScaffoldMessenger
-                                    .of(context)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "User management will be added later.",
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-
-                            // =================================
-                            // SALES
-                            // =================================
-
-                            _DashboardTile(
-                              icon:
-                                  Icons.point_of_sale_rounded,
-
-                              title:
-                                  "Sales",
-
-                              value:
-                                  "0",
-
-                              color:
-                                  const Color(0xFF147D78),
-
-                              onTap: () {
-                                ScaffoldMessenger
-                                    .of(context)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Sales statistics will be added later.",
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-
-                            // =================================
-                            // ITEMS
-                            // =================================
-
-                            _DashboardTile(
-                              icon:
-                                  Icons.inventory_2_rounded,
-
-                              title:
-                                  "Items",
-
-                              value:
-                                  "0",
-
-                              color:
-                                  const Color(0xFF176B40),
-
-                              onTap: () {
-                                ScaffoldMessenger
-                                    .of(context)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Item statistics will be added later.",
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-
-                            // =================================
-                            // PROFIT
-                            // =================================
-
-                            _DashboardTile(
-                              icon:
-                                  Icons.bar_chart_rounded,
-
-                              title:
-                                  "Profit",
-
-                              value:
-                                  "\$0.00",
-
-                              color:
-                                  const Color(0xFF8B5A2B),
-
-                              onTap: () {
-                                ScaffoldMessenger
-                                    .of(context)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Profit statistics will be added later.",
-                                    ),
-                                  ),
-                                );
-                              },
+                            const Icon(Icons.error_outline, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                provider.errorMessage!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
                             ),
                           ],
                         ),
+                      ),
 
-                        const SizedBox(
-                          height: 30,
-                        ),
-
-                        // ======================================
-                        // MANAGEMENT TITLE
-                        // ======================================
-
-                        const Text(
-                          "Management",
-
-                          style:
-                              TextStyle(
-                            fontSize: 22,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 16,
-                        ),
-
-                        // ======================================
-                        // MANAGE USERS
-                        // ======================================
-
-                        _ManagementTile(
-                          icon:
-                              Icons.people_alt_rounded,
-
-                          iconColor:
-                              const Color(0xFF174A7E),
-
-                          title:
-                              "Manage Users",
-
-                          subtitle:
-                              "View and manage system users",
-
-                          onTap: () {
-                            ScaffoldMessenger
-                                .of(context)
-                                .showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "User management will be added later.",
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                        // ======================================
-                        // REPORTS
-                        // ======================================
-
-                        _ManagementTile(
-                          icon:
-                              Icons.bar_chart_rounded,
-
-                          iconColor:
-                              const Color(0xFF455A64),
-
-                          title:
-                              "Reports",
-
-                          subtitle:
-                              "View system reports and statistics",
-
-                          onTap: () {
-                            ScaffoldMessenger
-                                .of(context)
-                                .showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Reports will be added later.",
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                        // ======================================
-                        // ACTIVITY
-                        // ======================================
-
-                        _ManagementTile(
-                          icon:
-                              Icons.history_rounded,
-
-                          iconColor:
-                              const Color(0xFF7A4E2D),
-
-                          title:
-                              "Activity",
-
-                          subtitle:
-                              "View system activity",
-
-                          onTap: () {
-                            ScaffoldMessenger
-                                .of(context)
-                                .showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Activity will be added later.",
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                        // ======================================
-                        // ADMIN PROFILE
-                        // ======================================
-
-                        _ManagementTile(
-                          icon:
-                              Icons.person_outline_rounded,
-
-                          iconColor:
-                              const Color(0xFF6B4AA1),
-
-                          title:
-                              "Admin Profile",
-
-                          subtitle:
-                              "Manage your administrator account",
-
-                          onTap: _openProfile,
-                        ),
-
-                        const SizedBox(
-                          height: 12,
-                        ),
-                      ],
+                    // SYSTEM OVERVIEW
+                    Text(
+                      "System Overview",
+                      style: TextStyle(
+                        fontSize: isCompact ? 18 : 22,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+
+                    GridView.builder(
+                      itemCount: 4,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: aspectRatio,
+                      ),
+                      itemBuilder: (context, index) {
+                        final items = [
+                          _DashboardItem(
+                            icon: Icons.people_alt_rounded,
+                            title: "Users",
+                            value: "$totalUsers",
+                            color: const Color(0xFF174A7E),
+                            onTap: () => _showSnack("User management will be added later."),
+                          ),
+                          _DashboardItem(
+                            icon: Icons.point_of_sale_rounded,
+                            title: "Sales",
+                            value: "$totalSales",
+                            color: const Color(0xFF147D78),
+                            onTap: () => _showSnack("Sales statistics will be added later."),
+                          ),
+                          _DashboardItem(
+                            icon: Icons.inventory_2_rounded,
+                            title: "Items",
+                            value: "$totalItems",
+                            color: const Color(0xFF176B40),
+                            onTap: () => _showSnack("Item statistics will be added later."),
+                          ),
+                          _DashboardItem(
+                            icon: Icons.bar_chart_rounded,
+                            title: "Profit",
+                            value: "\$${totalProfit.toStringAsFixed(2)}",
+                            color: const Color(0xFF8B5A2B),
+                            onTap: () => _showSnack("Profit statistics will be added later."),
+                          ),
+                        ];
+                        
+                        final item = items[index];
+
+                        return _buildDashboardCard(
+                          theme: theme,
+                          title: item.title,
+                          value: item.value,
+                          icon: item.icon,
+                          color: item.color,
+                          onTap: item.onTap,
+                          compact: isCompact,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // MANAGEMENT
+                    Text(
+                      "Management",
+                      style: TextStyle(
+                        fontSize: isCompact ? 18 : 22,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildManagementTile(
+                      theme: theme,
+                      icon: Icons.people_alt_rounded,
+                      iconColor: const Color(0xFF174A7E),
+                      title: "Manage Users",
+                      subtitle: "View and manage system users",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const UserManagementScreen()),
+                        );
+                      },
+                    ),
+
+                    _buildManagementTile(
+                      theme: theme,
+                      icon: Icons.history_rounded,
+                      iconColor: const Color(0xFF7A4E2D),
+                      title: "Activity",
+                      subtitle: "View system activity",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ActivityScreen()),
+                        );
+                      },
+                    ),
+
+                    _buildManagementTile(
+                      theme: theme,
+                      icon: Icons.person_outline_rounded,
+                      iconColor: const Color(0xFF6B4AA1),
+                      title: "Admin Profile",
+                      subtitle: "Manage your administrator account",
+                      onTap: _openProfile,
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
                 ),
-        );
-      },
+              ),
+            ),
     );
   }
-}
 
-// ============================================================
-// DASHBOARD TILE
-// ============================================================
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 
-class _DashboardTile extends StatelessWidget {
-  final IconData icon;
-
-  final String title;
-
-  final String value;
-
-  final Color color;
-
-  final VoidCallback onTap;
-
-  const _DashboardTile({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-
-      color: Colors.white,
-
-      shape:
-          RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(16),
-      ),
-
+  Widget _buildDashboardCard({
+    required ThemeData theme,
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required bool compact,
+  }) {
+    return Material(
+      color: theme.cardColor,
+      borderRadius: BorderRadius.circular(compact ? 14 : 17),
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(16),
-
+        borderRadius: BorderRadius.circular(compact ? 14 : 17),
         onTap: onTap,
-
-        child: Padding(
-          padding:
-              const EdgeInsets.all(14),
-
+        child: Container(
+          padding: EdgeInsets.all(compact ? 10 : 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(compact ? 14 : 17),
+            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.03),
+                blurRadius: 9,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
-
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // ==============================================
-              // ICON
-              // ==============================================
-
-              Icon(
-                icon,
-
-                size: 35,
-
-                color: color,
+              Container(
+                padding: EdgeInsets.all(compact ? 7 : 9),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(compact ? 10 : 12),
+                ),
+                child: Icon(icon, size: compact ? 20 : 23, color: color),
               ),
-
-              const SizedBox(
-                height: 10,
-              ),
-
-              // ==============================================
-              // TITLE
-              // ==============================================
-
+              const Spacer(),
               Text(
                 title,
-
-                textAlign:
-                    TextAlign.center,
-
-                style:
-                    const TextStyle(
-                  fontSize: 15,
-                  fontWeight:
-                      FontWeight.w600,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: compact ? 12 : 13,
+                  height: 1.2,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              // ==============================================
-              // VALUE
-              // ==============================================
-
+              const SizedBox(height: 4),
               Text(
                 value,
-
-                textAlign:
-                    TextAlign.center,
-
-                style:
-                    const TextStyle(
-                  fontSize: 19,
-                  fontWeight:
-                      FontWeight.bold,
-
-                  color:
-                      Color(0xFF102C4A),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: compact ? 14 : 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -712,111 +521,100 @@ class _DashboardTile extends StatelessWidget {
       ),
     );
   }
-}
 
-// ============================================================
-// MANAGEMENT TILE
-// ============================================================
-
-class _ManagementTile
-    extends StatelessWidget {
-
-  final IconData icon;
-
-  final Color iconColor;
-
-  final String title;
-
-  final String subtitle;
-
-  final VoidCallback onTap;
-
-  const _ManagementTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildManagementTile({
+    required ThemeData theme,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
     return Card(
-      margin:
-          const EdgeInsets.only(
-        bottom: 10,
-      ),
-
+      margin: const EdgeInsets.only(bottom: 10),
       elevation: 1,
-
-      color: Colors.white,
-
-      shape:
-          RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(16),
-      ),
-
+      color: theme.cardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(16),
-
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-
         child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 6,
-          ),
-
-          // ================================================
-          // ICON
-          // ================================================
-
+          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
           leading: CircleAvatar(
-            backgroundColor:
-                iconColor.withOpacity(0.10),
-
-            child: Icon(
-              icon,
-
-              color:
-                  iconColor,
-            ),
+            backgroundColor: iconColor.withValues(alpha: 0.10),
+            child: Icon(icon, color: iconColor),
           ),
-
-          // ================================================
-          // TITLE
-          // ================================================
-
           title: Text(
             title,
-
-            style:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.w600,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
           ),
-
-          // ================================================
-          // SUBTITLE
-          // ================================================
-
-          subtitle:
-              Text(subtitle),
-
-          // ================================================
-          // ARROW
-          // ================================================
-
-          trailing:
-              const Icon(
-            Icons.chevron_right,
-          ),
+          subtitle: Text(subtitle, style: TextStyle(color: theme.hintColor)),
+          trailing: Icon(Icons.chevron_right, color: theme.hintColor),
         ),
       ),
     );
+  }
+}
+
+class _DashboardItem {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color color;
+  final VoidCallback onTap;
+  const _DashboardItem({required this.icon, required this.title, required this.value, required this.color, required this.onTap});
+}
+
+// ============================================================
+// ✅ DASHED RING PAINTER
+// ============================================================
+class _DashedRingPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final int dashCount;
+  final double dashFraction;
+
+  _DashedRingPainter({
+    required this.color,
+    this.strokeWidth = 3,
+    this.dashCount = 24,
+    this.dashFraction = 0.55,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true;
+
+    final slotAngle = (2 * 3.1415926535) / dashCount;
+    final dashAngle = slotAngle * dashFraction;
+
+    for (int i = 0; i < dashCount; i++) {
+      final start = i * slotAngle;
+      final end = start + dashAngle;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        start,
+        end - start,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRingPainter old) {
+    return old.color != color ||
+        old.strokeWidth != strokeWidth ||
+        old.dashCount != dashCount ||
+        old.dashFraction != dashFraction;
   }
 }

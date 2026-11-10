@@ -177,4 +177,10 @@ class ExchangeRateProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+    void clear() {
+    _exchangeRates.clear();
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+  }
 }

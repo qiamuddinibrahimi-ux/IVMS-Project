@@ -184,11 +184,19 @@ class VendorProvider extends ChangeNotifier {
   // CLEAR ERROR
   // ======================================================
 
+
   void clearError() {
     if (_errorMessage == null) return;
 
     _errorMessage = null;
 
+    notifyListeners();
+  }
+
+  void clear() {
+    _vendors.clear();
+    _errorMessage = null;
+    _isLoading = false;
     notifyListeners();
   }
 }

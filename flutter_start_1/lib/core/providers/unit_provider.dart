@@ -175,4 +175,10 @@ class UnitProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+    void clear() {
+    _units.clear();
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+  }
 }

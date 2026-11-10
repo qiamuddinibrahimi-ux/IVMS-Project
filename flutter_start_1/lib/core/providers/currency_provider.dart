@@ -201,4 +201,10 @@ class CurrencyProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+    void clear() {
+    _currencies.clear();
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+  }
 }
